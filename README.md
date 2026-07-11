@@ -1,3 +1,1 @@
-# ormcp
-
-MCP daemon provider exposing tinywasm/orm databases as MCP tools
+<img src="docs/img/badges.svg">
