@@ -1,4 +1,4 @@
-package ormcp
+package sqlmcp
 
 import (
 	"strings"

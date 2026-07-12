@@ -1,6 +1,6 @@
 //go:build !wasm
 
-package ormcp
+package sqlmcp
 
 import (
 	"sync"

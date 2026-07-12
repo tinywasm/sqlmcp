@@ -1,4 +1,4 @@
-package ormcp
+package sqlmcp
 
 import (
 	"strings"
@@ -28,7 +28,7 @@ func encodeMCPMessage(resp mcp.JSONRPCMessage) string {
 // servidor "Connected" pero sin tools. Este test FALLA mientras el schema se genere
 // mal (db_query/db_exec serializando el struct → {"SQL":""}; db_schema/db_export_schema
 // con "" → null) y PASA cuando mcp genera el inputSchema desde Tool.Args (Schema()).
-// NO debe existir lógica de JSON Schema en ormcp.
+// NO debe existir lógica de JSON Schema en sqlmcp.
 func TestMCP_ToolsList_InputSchemaIsValidJSONSchema(t *testing.T) {
 	srv, err := mcp.NewServer(mcp.Config{Name: "test", Version: "1.0.0", Authorize: mcp.AllowAll}, nil)
 	if err != nil {

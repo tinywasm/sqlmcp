@@ -10,7 +10,7 @@
     - `github.com/tinywasm/mcp`
 - **JSON in tests:** For JSON operations in tests, use **only** `tinywasm/json`.
 
-## MCP and ormcp specifics
-- **JSON Schema:** Generating JSON Schema is NOT the responsibility of `ormcp`. This is handled by `tinywasm/mcp` via `Tool.Args` (which must implement `model.Fielder`).
+## MCP and sqlmcp specifics
+- **JSON Schema:** Generating JSON Schema is NOT the responsibility of `sqlmcp`. This is handled by `tinywasm/mcp` via `Tool.Args` (which must implement `model.Fielder`).
 - **No JSON Schema logic:** Do not include `encodeSchema` functions or manual `InputSchema` JSON strings in tool definitions.
 - **SQL Validation:** When defining models for SQL input, use `model.Text()` and provide an explicit `Permitted` whitelist that includes necessary SQL symbols (quotes, operators, etc.), as the default `Text` kind blocks them for XSS protection.

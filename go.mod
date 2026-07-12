@@ -1,4 +1,4 @@
-module github.com/tinywasm/ormcp
+module github.com/tinywasm/sqlmcp
 
 go 1.25.2
 
