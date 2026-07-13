@@ -8,7 +8,7 @@ require (
 	github.com/tinywasm/fmt v0.25.3
 	github.com/tinywasm/json v0.5.11
 	github.com/tinywasm/mcp v0.1.20
-	github.com/tinywasm/model v0.0.8
+	github.com/tinywasm/model v0.0.9
 	github.com/tinywasm/orm v0.9.27
 )
 
