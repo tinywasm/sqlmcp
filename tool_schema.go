@@ -2,6 +2,7 @@ package sqlmcp
 
 import (
 	"github.com/tinywasm/context"
+	"github.com/tinywasm/ddl"
 	"github.com/tinywasm/fmt"
 	"github.com/tinywasm/mcp"
 	"github.com/tinywasm/orm"
@@ -23,7 +24,7 @@ func executeSchema(db *orm.DB, req mcp.Request) (*mcp.Result, error) {
 	if db == nil {
 		return nil, fmt.Err("no database configured: call start_development first")
 	}
-	inspector, ok := db.RawExecutor().(orm.SchemaInspector)
+	inspector, ok := db.RawConn().(ddl.SchemaInspector)
 	if !ok {
 		return nil, fmt.Err("schema inspection not supported by the current database driver")
 	}

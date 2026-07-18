@@ -4,35 +4,25 @@ import (
 	"github.com/tinywasm/context"
 	"github.com/tinywasm/fmt"
 	"github.com/tinywasm/mcp"
-	"github.com/tinywasm/orm"
-	"github.com/tinywasm/ddlc"
 )
 
-func exportTool(db *orm.DB) mcp.Tool {
+func exportTool(exportFn ExportFunc) mcp.Tool {
 	return mcp.Tool{
 		Name:        "db_export_schema",
 		Description: "Export the full CREATE TABLE DDL for all synced tables as SQL text.",
 		Resource:    "database",
 		Action:      'r',
 		Execute: func(ctx *context.Context, req mcp.Request) (*mcp.Result, error) {
-			return executeExportSchema(db, req)
+			return executeExportSchema(exportFn, req)
 		},
 	}
 }
 
-func executeExportSchema(db *orm.DB, _ mcp.Request) (*mcp.Result, error) {
-	if db == nil {
+func executeExportSchema(exportFn ExportFunc, _ mcp.Request) (*mcp.Result, error) {
+	if exportFn == nil {
 		return nil, fmt.Err("no database configured: call start_development first")
 	}
-	exporter, ok := db.Compiler().(ddlc.Exporter)
-	if !ok {
-		return nil, fmt.Err("adapter does not support DDL export")
-	}
-	models := db.RegisteredModels()
-	if len(models) == 0 {
-		return mcp.Text("-- no tables registered"), nil
-	}
-	sql, err := exporter.ExportDDL(models)
+	sql, err := exportFn()
 	if err != nil {
 		return nil, err
 	}

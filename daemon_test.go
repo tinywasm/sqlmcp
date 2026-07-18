@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/tinywasm/context"
+	"github.com/tinywasm/ddl"
 	"github.com/tinywasm/mcp"
+	"github.com/tinywasm/model"
 	"github.com/tinywasm/orm"
+	"github.com/tinywasm/storage"
 )
 
 func TestDaemonProvider_Tools(t *testing.T) {
@@ -40,47 +43,56 @@ func TestDaemonProvider_NoDB(t *testing.T) {
 	}
 }
 
-type mockExecutor struct {
-	orm.Executor
+// mockConn implements storage.Conn + ddl.SchemaInspector for the daemon provider tests.
+type mockConn struct {
 	queryCalled bool
 	execCalled  bool
 }
 
-func (m *mockExecutor) Query(query string, args ...any) (orm.Rows, error) {
-	m.queryCalled = true
-	return &mockRows{}, nil
-}
-
-func (m *mockExecutor) Exec(query string, args ...any) error {
+func (m *mockConn) Exec(query string, args ...any) error {
 	m.execCalled = true
 	return nil
 }
 
-func (m *mockExecutor) Close() error { return nil }
-
-type mockRows struct {
-	orm.Rows
+func (m *mockConn) QueryRow(query string, args ...any) storage.Scanner {
+	return &mockScanner{}
 }
 
+func (m *mockConn) Query(query string, args ...any) (storage.Rows, error) {
+	m.queryCalled = true
+	return &mockRows{}, nil
+}
+
+func (m *mockConn) Close() error { return nil }
+
+func (m *mockConn) Compile(q storage.Query, mdl model.Model) (storage.Plan, error) {
+	return storage.Plan{}, nil
+}
+
+func (m *mockConn) Tables() ([]string, error) { return []string{"users"}, nil }
+
+func (m *mockConn) Columns(table string) ([]ddl.ColumnInfo, error) {
+	return []ddl.ColumnInfo{{Name: "id", Type: "INTEGER", PK: true}}, nil
+}
+
+type mockScanner struct{}
+
+func (m *mockScanner) Scan(dest ...any) error { return nil }
+
+type mockRows struct{}
+
 func (m *mockRows) Columns() ([]string, error) { return []string{"col1"}, nil }
-func (m *mockRows) Next() bool                { return false }
+func (m *mockRows) Next() bool                 { return false }
+func (m *mockRows) Scan(dest ...any) error     { return nil }
 func (m *mockRows) Close() error               { return nil }
 func (m *mockRows) Err() error                 { return nil }
 
-type mockInspector struct {
-	mockExecutor
-}
-
-func (m *mockInspector) Tables() ([]string, error) { return []string{"users"}, nil }
-func (m *mockInspector) Columns(table string) ([]orm.ColumnInfo, error) {
-	return []orm.ColumnInfo{{Name: "id", Type: "INTEGER", PK: true}}, nil
-}
-
 func TestDaemonProvider_WithDB(t *testing.T) {
 	p := NewDaemonProvider()
-	exec := &mockInspector{}
-	db := orm.New(exec, nil)
+	conn := &mockConn{}
+	db := orm.New(conn)
 	p.SetDB(db)
+	p.SetExportFunc(func() (string, error) { return "-- exported schema", nil })
 
 	ctx := context.Background()
 
@@ -90,8 +102,8 @@ func TestDaemonProvider_WithDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("db_query failed: %v", err)
 	}
-	if !exec.queryCalled {
-		t.Errorf("db_query did not call executor.Query")
+	if !conn.queryCalled {
+		t.Errorf("db_query did not call conn.Query")
 	}
 
 	// Test db_exec
@@ -100,14 +112,20 @@ func TestDaemonProvider_WithDB(t *testing.T) {
 	if err != nil {
 		t.Errorf("db_exec failed: %v", err)
 	}
-	if !exec.execCalled {
-		t.Errorf("db_exec did not call executor.Exec")
+	if !conn.execCalled {
+		t.Errorf("db_exec did not call conn.Exec")
 	}
 
 	// Test db_schema
 	_, err = p.Tools()[0].Execute(ctx, mcp.Request{}) // db_schema is at index 0
 	if err != nil {
 		t.Errorf("db_schema failed: %v", err)
+	}
+
+	// Test db_export_schema
+	_, err = p.Tools()[3].Execute(ctx, mcp.Request{}) // db_export_schema is at index 3
+	if err != nil {
+		t.Errorf("db_export_schema failed: %v", err)
 	}
 
 	// Test SetDB(nil)

@@ -32,7 +32,7 @@ func executeQuery(db *orm.DB, req mcp.Request) (*mcp.Result, error) {
 	if !fmt.HasPrefix(upper, "SELECT") && !fmt.HasPrefix(upper, "WITH") {
 		return nil, fmt.Err("db_query only accepts SELECT or WITH statements; use db_exec for mutations")
 	}
-	rows, err := db.RawExecutor().Query(args.Sql)
+	rows, err := db.RawConn().Query(args.Sql)
 	if err != nil {
 		return nil, err
 	}

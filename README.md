@@ -20,17 +20,22 @@ import "github.com/tinywasm/sqlmcp"
 | `db_schema` | read | — | Lists all tables with columns, types, and constraints |
 | `db_query` | read | `SQL` (string) | Executes a `SELECT`/`WITH` query and returns results as text |
 | `db_exec` | write | `SQL` (string) | Executes `INSERT`, `UPDATE`, `DELETE`, DDL statements |
-| `db_export_schema` | read | — | Exports full `CREATE TABLE` DDL for all registered models |
+| `db_export_schema` | read | — | Exports full `CREATE TABLE` DDL via the caller-supplied `ExportFunc` |
 
 ## Usage
 
 ### Provider (live connection)
 
-Use `Provider` when you already have a `*orm.DB` at startup:
+Use `Provider` when you already have a `*orm.DB` at startup. `orm.New` takes a single
+`storage.Conn` (e.g. from `sqlite.Open(dsn)` or `postgres.Open(dsn)`); `db_export_schema` has no
+model registry to draw on (orm dropped `Open`/`Register`), so the caller supplies the DDL export
+logic explicitly as an `ExportFunc`:
 
 ```go
-db := orm.New(executor, compiler)
-provider := sqlmcp.NewProvider(db)
+conn, _ := sqlite.Open(dsn)
+db := orm.New(conn)
+exportFn := func() (string, error) { return ormcGenerator.ExportSQL(rootDir, sqlt.NewCompiler()) }
+provider := sqlmcp.NewProvider(db, exportFn)
 
 srv, _ := mcp.NewServer(cfg, nil)
 for _, tool := range provider.Tools() {
@@ -38,7 +43,7 @@ for _, tool := range provider.Tools() {
 }
 ```
 
-> `db_schema` is only included when the underlying executor implements `orm.SchemaInspector`.
+> `db_schema` is only included when `db.RawConn()` implements `ddl.SchemaInspector`.
 
 ### DaemonProvider (hot-swap)
 
@@ -54,9 +59,11 @@ for _, tool := range provider.Tools() {   // registered at startup, DB not requi
 
 // later, when the project starts:
 provider.SetDB(db)
+provider.SetExportFunc(exportFn)
 
 // when the project stops:
 provider.SetDB(nil)
+provider.SetExportFunc(nil)
 ```
 
 `DaemonProvider` is goroutine-safe. All four tools are always registered; calls before `SetDB` return `"no database configured"`.

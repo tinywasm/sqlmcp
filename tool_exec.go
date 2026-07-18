@@ -28,7 +28,7 @@ func executeExec(db *orm.DB, req mcp.Request) (*mcp.Result, error) {
 	if err := req.Bind(&args); err != nil {
 		return nil, err
 	}
-	if err := db.RawExecutor().Exec(args.Sql); err != nil {
+	if err := db.RawConn().Exec(args.Sql); err != nil {
 		return nil, err
 	}
 	return mcp.Text("OK"), nil

@@ -13,8 +13,9 @@ import (
 // DaemonProvider implements mcp.ToolProvider for the MCP daemon.
 // Tools are registered at startup; SetDB wires the live connection at runtime.
 type DaemonProvider struct {
-	mu sync.RWMutex
-	db *orm.DB
+	mu       sync.RWMutex
+	db       *orm.DB
+	exportFn ExportFunc
 }
 
 // NewDaemonProvider creates a new DaemonProvider.
@@ -24,6 +25,13 @@ func NewDaemonProvider() *DaemonProvider { return &DaemonProvider{} }
 func (p *DaemonProvider) SetDB(db *orm.DB) {
 	p.mu.Lock()
 	p.db = db
+	p.mu.Unlock()
+}
+
+// SetExportFunc swaps the active DDL export function. Call with nil when the project stops.
+func (p *DaemonProvider) SetExportFunc(fn ExportFunc) {
+	p.mu.Lock()
+	p.exportFn = fn
 	p.mu.Unlock()
 }
 
@@ -60,9 +68,9 @@ func (p *DaemonProvider) exportToolD() mcp.Tool {
 		Action:      'r',
 		Execute: func(ctx *context.Context, req mcp.Request) (*mcp.Result, error) {
 			p.mu.RLock()
-			db := p.db
+			exportFn := p.exportFn
 			p.mu.RUnlock()
-			return executeExportSchema(db, req)
+			return executeExportSchema(exportFn, req)
 		},
 	}
 }
