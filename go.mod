@@ -9,7 +9,7 @@ require (
 	github.com/tinywasm/json v0.5.17
 	github.com/tinywasm/mcp v0.2.4
 	github.com/tinywasm/model v0.1.4
-	github.com/tinywasm/orm v0.11.2
+	github.com/tinywasm/orm v0.11.6
 	github.com/tinywasm/storage v0.0.2
 )
 
