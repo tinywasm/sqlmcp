@@ -17,6 +17,6 @@ require (
 	github.com/tinywasm/base64 v0.0.5 // indirect
 	github.com/tinywasm/fetch v0.1.24 // indirect
 	github.com/tinywasm/router v0.1.29 // indirect
-	github.com/tinywasm/time v0.5.0 // indirect
+	github.com/tinywasm/time v0.5.4 // indirect
 	github.com/tinywasm/unixid v0.2.24 // indirect
 )
